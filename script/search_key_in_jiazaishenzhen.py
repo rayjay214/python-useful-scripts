@@ -12,9 +12,9 @@ OS： mac os 12.13.6
 import requests
 from bs4 import BeautifulSoup
 
-import arrow
 import smtplib
 from email.mime.text import MIMEText
+import xlwt
 
 def get_html(url):
     try:
@@ -57,18 +57,24 @@ def get_content(url):
     return dict_posts
 
 g_str_mail_content = ''
-g_count = 0
+g_cur_row = 1
 
-def parse_one_page(title, url):
+def parse_one_page(title, url, sheet):
+    global g_cur_row
     html = get_html(url)
     soup = BeautifulSoup(html, 'lxml')
     divReply = soup.find_all('div', attrs={'id':'ReplyDetail'})
     for reply in divReply:
         content = reply.get_text().strip()
         if '名居' in content:
-            print('{}|||{}|||{}'.format(title, content, url))
+            sheet.write(g_cur_row, 0, title)
+            sheet.write(g_cur_row, 1, content)
+            sheet.write(g_cur_row, 2, url)
+            g_cur_row += 1
+            #print('{}|||{}|||{}'.format(title, content, url))
 
-def parse_one_post(title, url):
+
+def parse_one_post(title, url, sheet):
     html = get_html(url)
     soup = BeautifulSoup(html, 'lxml')
     #first, get page count
@@ -84,18 +90,20 @@ def parse_one_post(title, url):
             pass
     
     #parse each page
-    parse_one_page(title, url)
+    parse_one_page(title, url, sheet)
     index = url.find('.html')    
     if page_num >= 2:
         for i in range(2, page_num):
             url_with_page = url[:index] + '-0-0-{}'.format(i) + url[index:]
-            parse_one_page(title, url_with_page) 
+            parse_one_page(title, url_with_page, sheet) 
 
-def parse_all_post(dict_posts): 
+def parse_all_post(dict_posts):
+    workbook, sheet = create_workbook()
     for title in dict_posts:
         url = dict_posts[title]
-        parse_one_post(title, url)
-
+        parse_one_post(title, url, sheet)
+    
+    workbook.save('mingju.xls')
 
 def send_mail(content):
     HOST = 'smtp.qq.com'
@@ -117,9 +125,15 @@ def send_mail(content):
     except Exception as e:
         print("Send email error: %s" % e.args[0])
 
+def create_workbook():
+    workbook = xlwt.Workbook(encoding = 'utf8')
+    worksheet = workbook.add_sheet('sheet1')
+    return workbook, worksheet
+
 def main(base_url, g_begin_page, g_end_page):
     url_list = []
     for i in range(g_begin_page, g_end_page):
+        print('i is {}'.format(i))
         url_list.append(base_url.format(i))
 
     for url in url_list:
@@ -130,7 +144,7 @@ base_url = 'http://bbs.szhome.com/30017-0-0-0-{}.html'
 
 # 设置需要爬取的页码数量
 g_begin_page = 1
-g_end_page = 5
+g_end_page = 2
 
 if __name__ == '__main__':
     main(base_url, g_begin_page, g_end_page)
