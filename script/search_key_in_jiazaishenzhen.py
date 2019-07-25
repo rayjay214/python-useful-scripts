@@ -3,10 +3,7 @@
 
 
 '''
-抓取百度贴吧---西部世界吧的基本内容
-爬虫线路： requests - bs4
-Python版本： 3.6
-OS： mac os 12.13.6
+抓取家在深圳---包含某一关键字的所有帖子
 '''
 
 import requests
@@ -15,6 +12,10 @@ from bs4 import BeautifulSoup
 import smtplib
 from email.mime.text import MIMEText
 import xlwt
+from xlutils.copy import copy
+import xlrd
+import os
+import configparser
 
 def get_html(url):
     try:
@@ -56,22 +57,21 @@ def get_content(url):
 
     return dict_posts
 
-g_str_mail_content = ''
-g_cur_row = 1
-
 def parse_one_page(title, url, sheet):
     global g_cur_row
+    global g_keyword
+
     html = get_html(url)
     soup = BeautifulSoup(html, 'lxml')
     divReply = soup.find_all('div', attrs={'id':'ReplyDetail'})
     for reply in divReply:
         content = reply.get_text().strip()
-        if '名居' in content:
+        if g_keyword in content:
+            #print(content)
             sheet.write(g_cur_row, 0, title)
             sheet.write(g_cur_row, 1, content)
             sheet.write(g_cur_row, 2, url)
             g_cur_row += 1
-            #print('{}|||{}|||{}'.format(title, content, url))
 
 
 def parse_one_post(title, url, sheet):
@@ -98,12 +98,13 @@ def parse_one_post(title, url, sheet):
             parse_one_page(title, url_with_page, sheet) 
 
 def parse_all_post(dict_posts):
-    workbook, sheet = create_workbook()
+    global g_excel_name
+    workbook, sheet = get_workbook()
     for title in dict_posts:
         url = dict_posts[title]
         parse_one_post(title, url, sheet)
     
-    workbook.save('mingju.xls')
+    workbook.save(g_excel_name)
 
 def send_mail(content):
     HOST = 'smtp.qq.com'
@@ -125,28 +126,80 @@ def send_mail(content):
     except Exception as e:
         print("Send email error: %s" % e.args[0])
 
+#if file already exist, append or else create a new one
+def get_workbook():
+    global g_excel_name
+    b_exist = False
+    files = [f for f in os.listdir('.') if os.path.isfile(f)]
+    for f in files:
+        if g_excel_name == f:
+            b_exist = True
+            break
+
+    if b_exist:
+        workbook, worksheet = open_workbook()
+    else:
+        workbook, worksheet = create_workbook()
+
+    return workbook, worksheet
+
 def create_workbook():
     workbook = xlwt.Workbook(encoding = 'utf8')
     worksheet = workbook.add_sheet('sheet1')
     return workbook, worksheet
 
-def main(base_url, g_begin_page, g_end_page):
+def open_workbook():
+    global g_cur_row
+    global g_excel_name
+
+    rb = xlrd.open_workbook(g_excel_name)
+    r_sheet = rb.sheet_by_index(0)
+    g_cur_row = r_sheet.nrows
+    wb = copy(rb)
+    sheet = wb.get_sheet(0)
+    return wb, sheet
+
+def parse_config():
+    global g_begin_page
+    global g_end_page
+    global g_base_url
+    global g_keyword
+    global g_excel_name
+
+    cfg = configparser.ConfigParser()
+    cfg.read('search_key_in_jiazaishenzhen.cfg')
+    g_begin_page = int(cfg['DEFAULT']['begin_page'])
+    g_end_page = int(cfg['DEFAULT']['end_page'])
+    g_base_url = cfg['DEFAULT']['base_url']
+    g_keyword = cfg['DEFAULT']['keyword']
+    g_excel_name = cfg['DEFAULT']['excel_name']
+
+
+def main():
+    global g_base_url
+    global g_begin_page
+    global g_end_page
+
     url_list = []
     for i in range(g_begin_page, g_end_page):
-        print('i is {}'.format(i))
-        url_list.append(base_url.format(i))
+        print('current page is {}'.format(i))
+        url_list.append(g_base_url.format(i))
 
     for url in url_list:
         dict_posts = get_content(url)
         parse_all_post(dict_posts)
 
-base_url = 'http://bbs.szhome.com/30017-0-0-0-{}.html'
 
-# 设置需要爬取的页码数量
-g_begin_page = 1
-g_end_page = 2
+# all global varibles
+g_begin_page = 0
+g_end_page = 0
+g_base_url = ''
+g_keyword = ''
+g_excel_name = ''
+g_cur_row = 1
 
 if __name__ == '__main__':
-    main(base_url, g_begin_page, g_end_page)
+    parse_config()
+    main()
     #parse_one_post('aaa', 'http://bbs.szhome.com/30-30017-detail-176827746.html')
 
