@@ -60,19 +60,48 @@ def get_content(url):
 def parse_one_page(title, url, sheet):
     global g_cur_row
     global g_keyword
+    global g_including_ref
 
     html = get_html(url)
     soup = BeautifulSoup(html, 'lxml')
+    '''
     divReply = soup.find_all('div', attrs={'id':'ReplyDetail'})
     for reply in divReply:
         content = reply.get_text().strip()
+        idx = content.find('引用')        
+        if idx != -1 and not g_including_ref:
+            content = content[:idx]
+
         if g_keyword in content:
             #print(content)
             sheet.write(g_cur_row, 0, title)
             sheet.write(g_cur_row, 1, content)
             sheet.write(g_cur_row, 2, url)
             g_cur_row += 1
+    '''
+    try:
+        divPoster = soup.find_all('div', attrs={'class':'post-aside item-userinfo'})
+        for poster in divPoster:
+            divMainPost = poster.find_next_sibling('div', attrs={'class':'post-main-wrap item-body'})
+            str_username = poster.find('a', attrs={'class':'username'}).text
+            str_replytm = divMainPost.find('span', attrs={'class':'post-time spanWriteTime'}).text
+            str_content = divMainPost.find('div', attrs={'id':'ReplyDetail'}).get_text().strip()
+        
+            idx = str_content.find('引用')
+            if idx != -1 and not g_including_ref:
+                str_content = str_content[:idx]
 
+            if g_keyword in str_content:
+                #print(content)
+                sheet.write(g_cur_row, 0, title)
+                sheet.write(g_cur_row, 1, str_username)
+                sheet.write(g_cur_row, 2, str_replytm)
+                sheet.write(g_cur_row, 3, url)
+                sheet.write(g_cur_row, 4, str_content)
+                g_cur_row += 1
+    except Exception as e:
+        print('{},{},{},{},{}'.format(title, url, str_username, str_replytm, e))
+ 
 
 def parse_one_post(title, url, sheet):
     html = get_html(url)
@@ -165,6 +194,7 @@ def parse_config():
     global g_base_url
     global g_keyword
     global g_excel_name
+    global g_including_ref
 
     cfg = configparser.ConfigParser()
     cfg.read('search_key_in_jiazaishenzhen.cfg')
@@ -173,7 +203,7 @@ def parse_config():
     g_base_url = cfg['DEFAULT']['base_url']
     g_keyword = cfg['DEFAULT']['keyword']
     g_excel_name = cfg['DEFAULT']['excel_name']
-
+    g_including_ref = cfg['DEFAULT']['including_ref']
 
 def main():
     global g_base_url
@@ -185,10 +215,22 @@ def main():
         print('current page is {}'.format(i))
         url_list.append(g_base_url.format(i))
 
-    for url in url_list:
+    for idx, url in enumerate(url_list):
         dict_posts = get_content(url)
         parse_all_post(dict_posts)
+        print('page {} finished'.format(idx))
 
+def test_parse_one_page(url):
+    html = get_html(url)
+    soup = BeautifulSoup(html, 'lxml') 
+    
+    divPoster = soup.find_all('div', attrs={'class':'post-aside item-userinfo'})
+    for poster in divPoster:
+        divMainPost = poster.find_next_sibling('div', attrs={'class':'post-main-wrap item-body'})    
+        str_username = poster.find('a', attrs={'class':'username'}).text
+        str_replytm = divMainPost.find('span', attrs={'class':'post-time spanWriteTime'}).text
+        str_content = divMainPost.find('div', attrs={'id':'ReplyDetail'}).get_text().strip()
+        print('{},{},{}--------------'.format(str_username, str_replytm, str_content))
 
 # all global varibles
 g_begin_page = 0
@@ -196,10 +238,12 @@ g_end_page = 0
 g_base_url = ''
 g_keyword = ''
 g_excel_name = ''
+g_including_ref = False
 g_cur_row = 1
 
 if __name__ == '__main__':
     parse_config()
     main()
     #parse_one_post('aaa', 'http://bbs.szhome.com/30-30017-detail-176827746.html')
+    #test_parse_one_page('http://bbs.szhome.com/30-30017-detail-176827746-0-0-2.html')
 
