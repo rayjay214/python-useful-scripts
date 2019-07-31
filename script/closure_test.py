@@ -4,7 +4,7 @@
 g_login_url = "http://in.gpsoo.net/1/cardpool/account?method=login&login_name=root&passwd=goome@1703card&wechat_id=oex_1sxYp3OVkYBz0TlsWNhHLeS8"
 
 
-def gen_url(**kw):
+def gen_url():
     base_url = "http://in.gpsoo.net/1/cardpool/account?method=login&"
     def concat_url(**kw):
         target_url = base_url
