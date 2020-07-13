@@ -1,5 +1,4 @@
 #查看lv某款包包是否有货，windows上执行
-#查看lv某款包包是否有货，windows上执行
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
