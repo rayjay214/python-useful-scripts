@@ -26,30 +26,30 @@ def send_mail(content):
     print("Send email error: %s" % e.args[0])
 
 def get_once():
-	chrome_options = Options()
-	chrome_options.add_argument('--headless')
-	chrome_options.add_argument('--disable-gpu')
-	chrome_options.add_argument('--ignore-certificate-errors')
-	chrome_options.add_argument('user-agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"')
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--ignore-certificate-errors')
+    chrome_options.add_argument('user-agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"')
 
-	path = 'C:\Program Files (x86)\Google\Chrome\Application\chromedriver'
+    path = 'C:\Program Files (x86)\Google\Chrome\Application\chromedriver'
 
-	browser = webdriver.Chrome(executable_path=path,chrome_options=chrome_options)
-	#browser.get('https://www.louisvuitton.cn/zhs-cn/products/felicie-pochette-monogram-010578')
-	#print(type(browser.page_source))
+    browser = webdriver.Chrome(executable_path=path,chrome_options=chrome_options)
+    #browser.get('https://www.louisvuitton.cn/zhs-cn/products/felicie-pochette-monogram-010578')
+    #print(type(browser.page_source))
 
-	try:
-		browser.get('https://www.louisvuitton.cn/zhs-cn/products/pochette-accessoires-monogram-005656')
-		body = browser.find_element_by_tag_name('body')
-		target = body.get_attribute('data-pv-product-stock-status')
-		print('here is target {}'.format(target))
-		if(str(target) == 'instock'):
-			send_mail(str(target))
+    try:
+    	browser.get('https://www.louisvuitton.cn/zhs-cn/products/pochette-accessoires-monogram-005656')
+	body = browser.find_element_by_tag_name('body')
+	target = body.get_attribute('data-pv-product-stock-status')
+	print('here is target {}'.format(target))
+	if(str(target) == 'instock'):
+	    send_mail(str(target))
 	except Exception as e:
-		print('error {}'.format(e))
+	    print('error {}'.format(e))
 
 if __name__ == '__main__':
-	while True:
-		get_once()
-		time.sleep(30)
+    while True:
+	get_once()
+	time.sleep(30)
 
