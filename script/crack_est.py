@@ -3,6 +3,7 @@
 上传到非加密服务器之后再将其后缀名还原
 '''
 import os
+from chardet import detect
 
 g_ext_trans_dict = {'.cpp':'.app', '.h':'.hpp'}
 g_ext_trans_dict_reverse = {'.app':'.cpp', '.hpp':'.h'}
@@ -26,11 +27,22 @@ def rename_to_unencrpt_ext(root, file, ext):
         f.write(content)
     os.remove(file_path)
 
+#所有文件先统一编码成utf8
+def encode_to_utf8(root, file):
+    file_path = os.path.join(root, file)
+    with open(file_path, 'rb+') as fp:
+        content = fp.read()
+        encoding = detect(content)['encoding']
+        content = content.decode(encoding, 'ignore').encode('utf8')
+        fp.seek(0)
+        fp.write(content)
+ 
 def tranverse():
     for root, dirs, files in os.walk('.'):
         for file in files:
             ext = os.path.splitext(file)[1]
             if g_ext_trans_dict.get(ext, None) is not None:
+                encode_to_utf8(root, file)
                 rename_to_unencrpt_ext(root, file, ext)
 
             elif g_ext_trans_dict_reverse.get(ext, None) is not None:
