@@ -21,9 +21,9 @@ def rename_to_unencrpt_ext(root, file, ext):
     file_path = os.path.join(root, file)
     new_file_path = os.path.join(root, new_file)
     print(new_file_path)
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf8') as f:
         content = f.read()
-    with open(new_file_path, 'w') as f:
+    with open(new_file_path, 'w', encoding='utf8') as f:
         f.write(content)
     os.remove(file_path)
 
