@@ -5,8 +5,8 @@
 import os
 from chardet import detect
 
-g_ext_trans_dict = {'.cpp':'.app', '.h':'.hpp'}
-g_ext_trans_dict_reverse = {'.app':'.cpp', '.hpp':'.h'}
+g_ext_trans_dict = {'.cpp':'.ctt', '.h':'.htt'}
+g_ext_trans_dict_reverse = {'.ctt':'.cpp', '.htt':'.h'}
 
 #非加密服务器上调用
 def revert_file_ext(root, file, ext):
